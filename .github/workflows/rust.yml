@@ -79,6 +79,9 @@ jobs:
           - TARGET: mips-unknown-linux-musl # openwrt
             OS: ubuntu-latest
             FEATURES: ring-cipher,wss
+          - TARGET: loongarch64-unknown-linux-gnu # loongarch64
+            OS: ubuntu-latest
+            FEATURES: ring-cipher,wss
     # needs: test
     runs-on: ${{ matrix.OS }}
     env:
@@ -138,6 +141,9 @@ jobs:
               i686-unknown-linux-musl)
                 MUSL_URI=i686-linux-musl-cross
                 ;;
+              loongarch64-unknown-linux-gnu)
+                LOONG_CROSS_TOOL=https://github.com/loongson/build-tools/releases/download/2025.06.06/x86_64-cross-tools-loongarch64-binutils_2.44-gcc_15.1.0-glibc_2.41.tar.xz
+                ;;
             esac
           
             if [  -n "$MUSL_URI" ]; then
@@ -145,6 +151,11 @@ jobs:
               wget -c https://musl.cc/$MUSL_URI.tgz -P /opt/musl_gcc/
               tar zxf /opt/musl_gcc/$MUSL_URI.tgz -C /opt/musl_gcc/
               sudo ln -s /opt/musl_gcc/$MUSL_URI/bin/*gcc /usr/bin/
+            fi
+            if [  -n "$LOONG_CROSS_TOOL" ]; then
+              wget -O /opt/x86_64-cross-tools-loongarch64.tar.xz $LOONG_CROSS_TOOL
+              tar -xf /opt/x86_64-cross-tools-loongarch64.tar.xz -C /opt
+              sudo ln -s /opt/cross-tools/bin/*gcc /usr/bin/
             fi
           else
               rustup install 1.77
@@ -208,6 +219,10 @@ jobs:
           [target.i686-unknown-linux-musl]
           linker = "i686-linux-musl-gcc"
           rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols"]   
+          [target.loongarch64-unknown-linux-gnu]
+          linker = "i686-linux-musl-gcc"
+          linker = "loongarch64-unknown-linux-gnu-gcc"
+          rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols"]
           EOF
       - name: Install rust target
         if: ${{ ! startsWith(matrix.TARGET, 'mips') }}
